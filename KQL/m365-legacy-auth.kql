@@ -1,3 +1,10 @@
+// Identify users, and their devices, still using Legacy Auth to successfully sign in to Azure AD. 
+// Where statement relating to AADTenantId is where there are B2C directories in place.
+// As the UserAgent string varies due to software updates, devices are simplified based on the UserAgent contents.
+// With Conditional Access, there may be multiple Trusted or Named network locations, again summarised to On-Prem or not.
+
+// Data connector required for this query - Azure Active Directory - Signin Logs
+
 SigninLogs
 | where TimeGenerated >= ago(180d)
 //| where AADTenantId == "" and ResultType == "0"
