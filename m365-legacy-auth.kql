@@ -1,0 +1,17 @@
+SigninLogs
+| where TimeGenerated >= ago(180d)
+//| where AADTenantId == "" and ResultType == "0"
+| where ClientAppUsed in ("Exchange ActiveSync", "Exchange Web Services", "AutoDiscover", "Unknown", "POP3", "IMAP4", "Other clients", "Authenticated SMTP", "MAPI Over HTTP", "Offline Address Book")
+| extend Device = iif(UserAgent startswith "Apple-iPhone", "Apple iPhone",
+    iif(UserAgent startswith "Apple-iPad", "Apple iPad",
+    iif(UserAgent startswith "Android-SAMSUNG", "Samsung Android Phone",
+    iif(UserAgent contains "Windows NT 6.1", "Windows 7",
+    iif(UserAgent contains "Windows NT 6.3", "Windows 8.1",
+    iif(UserAgent startswith "AirWatch Boxer", "AirWatch Boxer",
+    "Other"))))))
+| extend Country = tostring(parse_json(tostring(LocationDetails)).countryOrRegion)
+| extend State = tostring(parse_json(tostring(LocationDetails)).state)
+| extend City = tostring(parse_json(tostring(LocationDetails)).city)
+| extend Network = iif(NetworkLocationDetails contains "namedNetwork", "On-Prem", "Other")
+| project UserPrincipalName, Device, IPAddress, Network, Country, State, City
+| sort by UserPrincipalName
