@@ -10,23 +10,23 @@
         },
         "WorkspaceID": {
             "type": "string",
-            "defaultValue": "c33f90e9-db66-4b28-9027-ada0d5be7303"
+            "defaultValue": "Enter Workspace ID Here"
         },
         "WorkspaceKey": {
             "type": "securestring",
-            "defaultValue": "VOdPKk7Kn0ugCj5Q6STA56dgwuPNenOewzuHA92dl+Dw162zss8q6YIZRozojMUPWRb6sap7kUF9ionDEpEM5Q=="
+            "defaultValue": "Enter Workspace Key Here"
         },
         "SalesforceUser": {
             "type": "string",
-            "defaultValue": "apiuser@epam.com"
+            "defaultValue": "Enter Username Here"
         },
         "SalesforcePass": {
             "type": "securestring",
-            "defaultValue": "Welcome@Salesforce%2312345"
+            "defaultValue": "Enter Password Here"
         },
         "SalesforceSecurityToken": {
             "type": "securestring",
-            "defaultValue": "00D7Z0000004sKU!AQoAQJf0f.n3hyTGftY8Qy7eocGXc83G7bynS_Kvvd4JvmEPIzm_N4wiLsOt8_PoLgGIyg6dTpX3lk0RbOoAVbdbH4.tPx3E"
+            "defaultValue": "Enter Salesforce Security Token Here"
         },
         "SalesforceTokenUri": {
             "type": "string",
@@ -37,11 +37,11 @@
         },
         "SalesforceConsumerKey": {
             "type": "securestring",
-            "defaultValue": "3MVG9qwDmLOyLzANx9KCZi1vDq9Y1zwCEXePyALEVoKFTgIF0Bew68BPy1.AiXpGvXvwBLXwLKr3OFUuU.44Z"
+            "defaultValue": "Enter Salesforce Consumer Key Here"
         },
         "SalesforceConsumerSecret": {
             "type": "securestring",
-            "defaultValue": "668979F0E6ECDF0F7466559762468E436FC61057D4D229854DAAB9C15EC617D8"
+            "defaultValue": "Enter Salesforce Consumer Secret Here"
         },
         "asp-sentinel-salesforce-001Name": {
             "type": "string",
