@@ -1,0 +1,258 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "FunctionName": {
+            "defaultValue": "SFSCConn",
+            "minLength": 1,
+            "maxLength": 11,
+            "type": "string"
+        },
+        "WorkspaceID": {
+            "type": "string",
+            "defaultValue": "c33f90e9-db66-4b28-9027-ada0d5be7303"
+        },
+        "WorkspaceKey": {
+            "type": "securestring",
+            "defaultValue": "VOdPKk7Kn0ugCj5Q6STA56dgwuPNenOewzuHA92dl+Dw162zss8q6YIZRozojMUPWRb6sap7kUF9ionDEpEM5Q=="
+        },
+        "SalesforceUser": {
+            "type": "string",
+            "defaultValue": "apiuser@epam.com"
+        },
+        "SalesforcePass": {
+            "type": "securestring",
+            "defaultValue": "Welcome@Salesforce%2312345"
+        },
+        "SalesforceSecurityToken": {
+            "type": "securestring",
+            "defaultValue": "00D7Z0000004sKU!AQoAQJf0f.n3hyTGftY8Qy7eocGXc83G7bynS_Kvvd4JvmEPIzm_N4wiLsOt8_PoLgGIyg6dTpX3lk0RbOoAVbdbH4.tPx3E"
+        },
+        "SalesforceTokenUri": {
+            "type": "string",
+            "defaultValue": "https://login.salesforce.com/services/oauth2/token",
+            "metadata": {
+                "description": "Use default value for Production environment, for sandbox environment update accordingly."
+            }
+        },
+        "SalesforceConsumerKey": {
+            "type": "securestring",
+            "defaultValue": "3MVG9qwDmLOyLzANx9KCZi1vDq9Y1zwCEXePyALEVoKFTgIF0Bew68BPy1.AiXpGvXvwBLXwLKr3OFUuU.44Z"
+        },
+        "SalesforceConsumerSecret": {
+            "type": "securestring",
+            "defaultValue": "668979F0E6ECDF0F7466559762468E436FC61057D4D229854DAAB9C15EC617D8"
+        },
+        "asp-sentinel-salesforce-001Name": {
+            "type": "string",
+            "minLength": 1
+        },
+        "asp-sentinel-salesforce-001SKU": {
+            "type": "string",
+            "allowedValues": [
+                "Free",
+                "Shared",
+                "Basic",
+                "Standard"
+            ],
+            "defaultValue": "Free"
+        },
+        "asp-sentinel-salesforce-001WorkerSize": {
+            "type": "string",
+            "allowedValues": [
+                "0",
+                "1",
+                "2"
+            ],
+            "defaultValue": "0"
+        }
+    },
+    "variables": {
+        "FunctionName": "[concat(toLower(parameters('FunctionName')), uniqueString(resourceGroup().id))]",
+        "StorageSuffix": "[environment().suffixes.storage]",
+        "LogAnaltyicsUri": "[replace(environment().portal, 'https://portal', concat('https://', toLower(parameters('WorkspaceID')), '.ods.opinsights'))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Insights/components",
+            "apiVersion": "2015-05-01",
+            "name": "[variables('FunctionName')]",
+            "location": "[resourceGroup().location]",
+            "kind": "web",
+            "properties": {
+                "Application_Type": "web",
+                "ApplicationId": "[variables('FunctionName')]"
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2019-06-01",
+            "name": "[tolower(variables('FunctionName'))]",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "Standard_LRS",
+                "tier": "Standard"
+            },
+            "kind": "StorageV2",
+            "properties": {
+                "networkAcls": {
+                    "bypass": "AzureServices",
+                    "virtualNetworkRules": [],
+                    "ipRules": [],
+                    "defaultAction": "Deny"
+                },
+                "supportsHttpsTrafficOnly": true,
+                "encryption": {
+                    "services": {
+                        "file": {
+                            "keyType": "Account",
+                            "enabled": true
+                        },
+                        "blob": {
+                            "keyType": "Account",
+                            "enabled": true
+                        }
+                    },
+                    "keySource": "Microsoft.Storage"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/blobServices",
+            "apiVersion": "2019-06-01",
+            "name": "[concat(variables('FunctionName'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', tolower(variables('FunctionName')))]"
+            ],
+            "sku": {
+                "name": "Standard_LRS",
+                "tier": "Standard"
+            },
+            "properties": {
+                "cors": {
+                    "corsRules": []
+                },
+                "deleteRetentionPolicy": {
+                    "enabled": false
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/fileServices",
+            "apiVersion": "2019-06-01",
+            "name": "[concat(variables('FunctionName'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', tolower(variables('FunctionName')))]"
+            ],
+            "sku": {
+                "name": "Standard_LRS",
+                "tier": "Standard"
+            },
+            "properties": {
+                "cors": {
+                    "corsRules": []
+                }
+            }
+        },
+		{
+            "name": "[parameters('asp-sentinel-salesforce-001Name')]",
+            "type": "Microsoft.Web/serverfarms",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2021-01-01",
+            "dependsOn": [],
+            "tags": {
+                "displayName": "asp-sentinel-salesforce-001"
+            },
+            "properties": {
+                "name": "[parameters('asp-sentinel-salesforce-001Name')]",
+                "sku": "[parameters('asp-sentinel-salesforce-001SKU')]",
+                "workerSize": "[parameters('asp-sentinel-salesforce-001WorkerSize')]",
+                "numberOfWorkers": 1
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites",
+            "apiVersion": "2018-11-01",
+            "name": "[variables('FunctionName')]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', tolower(variables('FunctionName')))]",
+                "[resourceId('Microsoft.Insights/components', variables('FunctionName'))]"
+            ],
+            "kind": "functionapp,linux",
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "properties": {
+                "name": "[variables('FunctionName')]",
+                "httpsOnly": true,
+                "clientAffinityEnabled": true,
+                "alwaysOn": true,
+                "reserved": true
+            },
+            "resources": [
+                {
+                    "apiVersion": "2021-01-01",
+                    "type": "config",
+                    "name": "appsettings",
+                    "dependsOn": [
+                        "[concat('Microsoft.Web/sites/', variables('FunctionName'))]"
+                    ],
+                    "properties": {
+                        "FUNCTIONS_EXTENSION_VERSION": "~3",
+                        "FUNCTIONS_WORKER_RUNTIME": "python",
+                        "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(resourceId('Microsoft.insights/components', variables('FunctionName')), '2015-05-01').InstrumentationKey]",
+                        "APPLICATIONINSIGHTS_CONNECTION_STRING": "[reference(resourceId('microsoft.insights/components', variables('FunctionName')), '2015-05-01').ConnectionString]",
+                        "AzureWebJobsStorage": "[concat('DefaultEndpointsProtocol=https;AccountName=', toLower(variables('FunctionName')),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', toLower(variables('FunctionName'))), '2019-06-01').keys[0].value, ';EndpointSuffix=',toLower(variables('StorageSuffix')))]",
+                        "WorkspaceID": "[parameters('WorkspaceID')]",
+                        "WorkspaceKey": "[parameters('WorkspaceKey')]",
+                        "SalesforceUser": "[parameters('SalesforceUser')]",
+                        "SalesforcePass": "[parameters('SalesforcePass')]",
+                        "SalesforceTokenUri": "[parameters('SalesforceTokenUri')]",
+                        "SalesforceSecurityToken": "[parameters('SalesforceSecurityToken')]",
+                        "SalesforceConsumerKey": "[parameters('SalesforceConsumerKey')]",
+                        "SalesforceConsumerSecret": "[parameters('SalesforceConsumerSecret')]",
+                        "logAnalyticsUri": "[variables('LogAnaltyicsUri')]",
+                        "WEBSITE_RUN_FROM_PACKAGE": "https://aka.ms/sentinel-SalesforceServiceCloud-functionapp"
+                    }
+                }
+            ]
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+            "apiVersion": "2019-06-01",
+            "name": "[concat(variables('FunctionName'), '/default/azure-webjobs-hosts')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts/blobServices', variables('FunctionName'), 'default')]",
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('FunctionName'))]"
+            ],
+            "properties": {
+                "publicAccess": "None"
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+            "apiVersion": "2019-06-01",
+            "name": "[concat(variables('FunctionName'), '/default/azure-webjobs-secrets')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts/blobServices', variables('FunctionName'), 'default')]",
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('FunctionName'))]"
+            ],
+            "properties": {
+                "publicAccess": "None"
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/fileServices/shares",
+            "apiVersion": "2019-06-01",
+            "name": "[concat(variables('FunctionName'), '/default/', tolower(variables('FunctionName')))]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts/fileServices', variables('FunctionName'), 'default')]",
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('FunctionName'))]"
+            ],
+            "properties": {
+                "shareQuota": 5120
+            }
+        }
+    ]
+}
