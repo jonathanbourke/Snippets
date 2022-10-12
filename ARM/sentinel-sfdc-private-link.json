@@ -337,7 +337,7 @@
         },
         {
             "type": "Microsoft.Network/virtualNetworks",
-            "apiVersion": "2020-07-01",
+            "apiVersion": "2017-06-01",
             "name": "[parameters('vnetName')]",
             "location": "[parameters('location')]",
             "properties": {
@@ -376,31 +376,35 @@
           },
           {
             "type": "Microsoft.Network/privateDnsZones",
-            "apiVersion": "2020-06-01",
+            "apiVersion": "2018-09-01",
             "name": "[variables('privateStorageFileDnsZoneName')]",
-            "location": "global"
+            "location": "global",
+            "properties": {}
           },
           {
             "type": "Microsoft.Network/privateDnsZones",
-            "apiVersion": "2020-06-01",
+            "apiVersion": "2018-09-01",
             "name": "[variables('privateStorageBlobDnsZoneName')]",
-            "location": "global"
+            "location": "global",
+            "properties": {}
           },
           {
             "type": "Microsoft.Network/privateDnsZones",
-            "apiVersion": "2020-06-01",
+            "apiVersion": "2018-09-01",
             "name": "[variables('privateStorageQueueDnsZoneName')]",
-            "location": "global"
+            "location": "global",
+            "properties": {}
           },
           {
             "type": "Microsoft.Network/privateDnsZones",
-            "apiVersion": "2020-06-01",
+            "apiVersion": "2018-09-01",
             "name": "[variables('privateStorageTableDnsZoneName')]",
-            "location": "global"
+            "location": "global",
+            "properties": {}
           },
           {
             "type": "Microsoft.Network/privateEndpoints",
-            "apiVersion": "2021-02-01",
+            "apiVersion": "2019-04-01",
             "name": "[variables('privateEndpointStorageFileName')]",
             "location": "[parameters('location')]",
             "properties": {
@@ -426,7 +430,7 @@
           },
           {
             "type": "Microsoft.Network/privateEndpoints",
-            "apiVersion": "2021-02-01",
+            "apiVersion": "2019-04-01",
             "name": "[variables('privateEndpointStorageTableName')]",
             "location": "[parameters('location')]",
             "properties": {
@@ -452,7 +456,7 @@
           },
           {
             "type": "Microsoft.Network/privateEndpoints",
-            "apiVersion": "2021-02-01",
+            "apiVersion": "2019-04-01",
             "name": "[variables('privateEndpointStorageQueueName')]",
             "location": "[parameters('location')]",
             "properties": {
@@ -478,7 +482,7 @@
           },
           {
             "type": "Microsoft.Network/privateEndpoints",
-            "apiVersion": "2021-02-01",
+            "apiVersion": "2019-04-01",
             "name": "[variables('privateEndpointStorageBlobName')]",
             "location": "[parameters('location')]",
             "properties": {
