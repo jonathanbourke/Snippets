@@ -1,0 +1,25 @@
+//Set a 1-hour window. Build a list of malicious IP addresses from a number of external sources. Look at Salesforce ApiEvent logs over that 1-hour window, excluding any queries with less than a 1000 rows, any queries from system user accounts, and return any instances where significant amounts of PII data may have been accessed. As these queries are run multiple times by integrations, summarize and take the most recent one. Use that information to build an informative alert description, even checking to see if the source IP appears on any 3RD party block list. Project the description, username, and IP address to be used by Sentinel for alert creation.  
+
+let Window_s = "1h";
+
+let BlockList = (externaldata(ip:string)
+[@https://rules.emergingthreats.net/blockrules/compromised-ips.txt,
+@https://raw.githubusercontent.com/stamparm/ipsum/master/levels/5.txt,
+@https://cinsscore.com/list/ci-badguys.txt,
+@https://feodotracker.abuse.ch/downloads/ipblocklist_recommended.txt
+]
+with(format="csv")
+| where ip matches regex "(^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$)"
+| distinct ip
+);
+
+SalesForceLogs_CL
+| where TimeGenerated >= ago(totimespan(Window_s))
+| where Object_s has "ApiEvent"
+| where RowsReturned_d >= 1000
+| where Username_s !in ('excluded.user.one@domain.com','excluded.user.two@example.com')
+| where QueriedEntities_s has_any ('Individual', 'Lead', 'Contact')
+| where Query_s has_any ('Name', 'Phone', 'Email')
+| summarize arg_max(EventDate_t, *), count() by Username_s, QueriedEntities_s
+| extend Alert_Description_s = strcat('Salesforce Transaction Security policy for ', Object_s, 'was triggered by ', Username_s,'. In the last ',Window_s,', this account executed ', count_, ' queries from IP address ', SourceIP, iif(SourceIP in (BlockList),' which has appeared in one or more 3rd party recommended block lists',''),'. The connection used the ',ApiType_s,' API with the following useragent: ',UserAgent_s, '. The most recent query was of ', QueriedEntities_s, iif(countof(QueriedEntities_s, ',') == 0, ' entity and returned ', ' entities and returned '), toint(RowsReturned_d), ' rows, using the following query: ', Query_s) 
+| project Alert_Description_s, SourceIP, Username_s, Object_s
