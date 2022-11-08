@@ -1,0 +1,185 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Add_comment_to_incident_with_Zendesk_Ticket_ID": {
+                "inputs": {
+                    "body": {
+                        "incidentArmId": "@triggerBody()?['object']?['id']",
+                        "message": "<p>A Zendesk Ticket has been created for this incident with ID: @{body('Create_Ticket')?['id']}<br>\nSee the ticket here: https://tarbhhelp.zendesk.com/agent/tickets/@{body('Create_Ticket')?['id']}</p>"
+                    },
+                    "host": {
+                        "connection": {
+                            "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                        }
+                    },
+                    "method": "post",
+                    "path": "/Incidents/Comment"
+                },
+                "runAfter": {
+                    "Create_Ticket": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "ApiConnection"
+            },
+            "Create_CSV_table_of_Incident_Entities": {
+                "inputs": {
+                    "format": "CSV",
+                    "from": "@body('Select_the_Incident_Entities')"
+                },
+                "runAfter": {
+                    "Select_the_Incident_Entities": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Table"
+            },
+            "Create_Ticket": {
+                "inputs": {
+                    "body": {
+                        "description": "Severity: @{triggerBody()?['object']?['properties']?['severity']}\nCreation time: @{formatDateTime(triggerBody()?['object']?['properties']?['createdTimeUtc'], 'yyyy-MM-dd hh:mm:ss')}\nDescription: @{triggerBody()?['object']?['properties']?['description']}\nEntities:\n@{body('Create_CSV_table_of_Incident_Entities')}\n\n\nView incident in Azure Sentinel: @{triggerBody()?['object']?['properties']?['incidentUrl']}",
+                        "external_id": "@{triggerBody()?['object']?['properties']?['incidentNumber']}",
+                        "priority": "@variables('Zendesk_Severity')",
+                        "requester_id": "<enter value here>",
+                        "subject": "@{triggerBody()?['object']?['properties']?['incidentNumber']} Azure Sentinel @{triggerBody()?['object']?['properties']?['severity']} incident: @{triggerBody()?['object']?['properties']?['title']}",
+                        "type": "incident"
+                    },
+                    "host": {
+                        "connection": {
+                            "name": "@parameters('$connections')['zendesk']['connectionId']"
+                        }
+                    },
+                    "method": "post",
+                    "path": "/datasets/default/tables/@{encodeURIComponent(encodeURIComponent('tickets'))}/items"
+                },
+                "runAfter": {
+                    "Set_the_Zendesk_Priority": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "ApiConnection"
+            },
+            "Initialize_Zendesk_Severity_variable": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "Zendesk_Severity",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Create_CSV_table_of_Incident_Entities": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable"
+            },
+            "Select_the_Incident_Entities": {
+                "inputs": {
+                    "from": "@triggerBody()?['object']?['properties']?['relatedEntities']",
+                    "select": {
+                        "Entity": "@item()?['properties']?['friendlyName']",
+                        "Type": "@item()?['kind']"
+                    }
+                },
+                "runAfter": {},
+                "type": "Select"
+            },
+            "Set_the_Zendesk_Priority": {
+                "cases": {
+                    "High_Priority": {
+                        "actions": {
+                            "Set_variable_to_high": {
+                                "inputs": {
+                                    "name": "Zendesk_Severity",
+                                    "value": "high"
+                                },
+                                "runAfter": {},
+                                "type": "SetVariable"
+                            }
+                        },
+                        "case": "High"
+                    },
+                    "Low_Priority": {
+                        "actions": {
+                            "Set_variable_to_low": {
+                                "inputs": {
+                                    "name": "Zendesk_Severity",
+                                    "value": "low"
+                                },
+                                "runAfter": {},
+                                "type": "SetVariable"
+                            }
+                        },
+                        "case": "Low"
+                    },
+                    "Medium_Priority": {
+                        "actions": {
+                            "Set_variable_to_normal": {
+                                "inputs": {
+                                    "name": "Zendesk_Severity",
+                                    "value": "normal"
+                                },
+                                "runAfter": {},
+                                "type": "SetVariable"
+                            }
+                        },
+                        "case": "Medium"
+                    }
+                },
+                "default": {
+                    "actions": {}
+                },
+                "expression": "@triggerBody()?['object']?['properties']?['severity']",
+                "runAfter": {
+                    "Initialize_Zendesk_Severity_variable": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Switch"
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {},
+        "parameters": {
+            "$connections": {
+                "defaultValue": {},
+                "type": "Object"
+            }
+        },
+        "triggers": {
+            "Microsoft_Sentinel_incident": {
+                "inputs": {
+                    "body": {
+                        "callback_url": "@{listCallbackUrl()}"
+                    },
+                    "host": {
+                        "connection": {
+                            "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                        }
+                    },
+                    "path": "/incident-creation"
+                },
+                "type": "ApiConnectionWebhook"
+            }
+        }
+    },
+    "parameters": {
+        "$connections": {
+            "value": {
+                "azuresentinel": {
+                    "connectionId": "<enter value here>",
+                    "connectionName": "azuresentinel",
+                    "id": "<enter value here>"
+                },
+                "zendesk": {
+                    "connectionId": "<enter value here>",
+                    "connectionName": "zendesk",
+                    "id": "<enter value here>"
+                }
+            }
+        }
+    }
+}
